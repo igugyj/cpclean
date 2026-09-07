@@ -1,0 +1,36 @@
+{
+  "name": "comparecleaner",
+  "displayName": "CompareCleaner",
+  "description": "Find and clean unused files by comparing with reference files.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "comparecleaner.openPanel",
+        "title": "CompareCleaner: Open Panel"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "trash": "^9.0.0"
+  }
+}
