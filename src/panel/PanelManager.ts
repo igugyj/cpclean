@@ -54,6 +54,9 @@ export async function createPanel(
         case "runScan":
           await router.handleScan();
           break;
+        case "cancelScan":
+          router.handleCancelScan();
+          break;
         case "removeFromUnused":
           await router.handleRemoveFromUnused(message.payload.indices || []);
           break;
@@ -86,6 +89,9 @@ export async function createPanel(
           break;
         case "openConfig":
           await router.handleOpenConfig();
+          break;
+        case "clearCache":
+          await router.handleClearCache();
           break;
         default:
           console.warn("[PanelManager] 未知消息:", message.type);

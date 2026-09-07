@@ -5,8 +5,7 @@
   box-sizing: border-box;
 }
 
-html,
-body {
+html, body {
   height: 100%;
   overflow: hidden;
 }
@@ -16,20 +15,19 @@ body {
   font-size: var(--vscode-font-size);
   color: var(--vscode-foreground);
   background-color: var(--vscode-editor-background);
-  padding: 20px 24px 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  padding: 12px 20px 12px 20px;
   height: 100vh;
+  overflow: hidden;
 }
 
-/* ===== 通用 ===== */
-.text-muted {
-  color: var(--vscode-descriptionForeground);
-  font-size: 0.9em;
-}
-.text-sm {
-  font-size: 0.9em;
+/* ===== App 容器使用 Grid 布局 ===== */
+#app {
+  display: grid;
+  grid-template-rows: auto auto auto auto auto 1fr;
+  gap: 6px;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 /* ===== 标题栏 ===== */
@@ -37,9 +35,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 8px;
   border-bottom: 1px solid var(--vscode-panel-border);
-  flex-shrink: 0;
+  padding-bottom: 4px;
 }
 .brand-name {
   font-size: 18px;
@@ -50,54 +47,57 @@ body {
   display: flex;
   gap: 8px;
 }
-.header-actions button,
-.tag-actions button {
+.header-actions button {
   background: transparent;
   border: none;
   color: var(--vscode-foreground);
   cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
   font-size: 15px;
   transition: background 0.15s;
 }
-.header-actions button:hover,
-.tag-actions button:hover {
+.header-actions button:hover {
   background: var(--vscode-toolbar-hoverBackground);
 }
 
 /* ===== 警示栏 ===== */
 .footer-warning {
-  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 14px;
+  padding: 4px 14px;
   background: var(--vscode-inputValidation-warningBackground);
   color: var(--vscode-inputValidation-warningForeground);
   border: 1px solid var(--vscode-inputValidation-warningBorder);
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.4;
+  overflow: hidden;
 }
 .footer-warning i {
-  font-size: 15px;
+  font-size: 14px;
   opacity: 0.8;
+}
+.footer-warning span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ===== 状态栏 ===== */
 .status-bar {
-  flex-shrink: 0;
-  padding: 2px 0;
+  display: flex;
+  align-items: center;
 }
 .status-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  width: 100%;
 }
 .workspace {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--vscode-descriptionForeground);
   display: flex;
   align-items: center;
@@ -118,7 +118,7 @@ body {
   font-size: 13px;
   color: var(--vscode-descriptionForeground);
   text-align: right;
-  min-width: 100px;
+  min-width: 80px;
 }
 .status-text {
   font-weight: 500;
@@ -133,31 +133,26 @@ body {
   color: var(--vscode-descriptionForeground);
 }
 
-/* ===== 标签带 ===== */
+/* ===== 标签带（自适应高度，最大高度 180px） ===== */
 .tag-section {
-  flex-shrink: 0;
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 10px;
-  padding: 8px 14px;
+  border-radius: 8px;
+  padding: 4px 12px 4px 12px;
   background: var(--vscode-editor-background);
   display: flex;
   flex-direction: column;
-  max-height: 260px;
+  overflow: hidden;
+  max-height: 180px;            /* 增大 2 倍 */
 }
 .tag-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
   flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--vscode-editor-background);
-  padding-bottom: 4px;
+  height: 24px;
 }
 .tag-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--vscode-descriptionForeground);
   display: flex;
@@ -169,35 +164,42 @@ body {
   gap: 4px;
 }
 .tag-actions button {
-  font-size: 14px;
-  padding: 4px 8px;
-  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: background 0.15s;
 }
-/* 标签容器：纵向排列 */
+.tag-actions button:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
 .tag-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  width: 100%;
-  overflow-y: auto;
-  flex: 1;
-  max-height: 200px;
-  padding-right: 4px;
+  gap: 3px;
+  min-height: 0;
 }
-/* 每个标签：占满整行，x 在右侧 */
+
 .tag-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   background: var(--vscode-badge-background);
   color: var(--vscode-badge-foreground);
-  padding: 3px 10px 3px 8px;
-  border-radius: 6px;
-  font-size: 13px;
-  line-height: 1.6;
-  width: 100%;
-  min-height: 28px;
+  padding: 2px 8px 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  flex-shrink: 0;
+  height: 24px;
 }
 .tag-item .tag-text {
   overflow: hidden;
@@ -212,25 +214,24 @@ body {
   background: none;
   border: none;
   color: inherit;
-  padding: 0 6px;
-  font-size: 18px;
+  padding: 0 4px;
+  font-size: 16px;
   line-height: 1;
   border-radius: 4px;
   transition: opacity 0.15s;
-  font-weight: 300;
 }
 .tag-remove:hover {
   opacity: 1;
   background: var(--vscode-toolbar-hoverBackground);
 }
-/* 占位提示 */
 .tag-placeholder {
   display: flex;
   align-items: center;
   gap: 6px;
   color: var(--vscode-descriptionForeground);
-  font-size: 13px;
-  padding: 3px 0;
+  font-size: 12px;
+  padding: 2px 0;
+  height: 24px;
 }
 .tag-placeholder i {
   opacity: 0.5;
@@ -238,48 +239,49 @@ body {
 .tag-placeholder .tag-hint {
   margin-left: auto;
   opacity: 0.5;
-  font-size: 12px;
+  font-size: 11px;
 }
 
-/* ===== 结果表格 ===== */
+/* ===== 结果表格（占据剩余所有高度） ===== */
 .result-section {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   background: var(--vscode-editor-background);
+  min-height: 0;
 }
+
 .result-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 16px;
+  padding: 4px 14px;
   background: var(--vscode-editor-background);
   border-bottom: 1px solid var(--vscode-panel-border);
   flex-shrink: 0;
   flex-wrap: nowrap;
-  gap: 10px;
+  gap: 8px;
+  height: 34px;
 }
 .result-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   white-space: nowrap;
   flex-shrink: 0;
 }
 .result-title .count {
   font-weight: 400;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--vscode-descriptionForeground);
 }
 .result-actions {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: nowrap;
   flex-shrink: 0;
 }
@@ -288,9 +290,9 @@ body {
   border: none;
   color: var(--vscode-foreground);
   cursor: pointer;
-  padding: 4px 14px;
-  border-radius: 8px;
-  font-size: 13px;
+  padding: 2px 12px;
+  border-radius: 6px;
+  font-size: 12px;
   white-space: nowrap;
   transition: background 0.15s;
   font-weight: 500;
@@ -308,61 +310,74 @@ body {
 .table-wrapper {
   flex: 1;
   overflow: auto;
-  padding: 6px 16px 12px 16px;
+  padding: 4px 14px 8px 14px;
+  min-height: 0;
 }
+
 table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 13px;
 }
+
 th {
   position: sticky;
   top: 0;
   text-align: left;
-  padding: 8px 10px;
+  padding: 6px 8px;
   background: var(--vscode-editor-background);
   border-bottom: 1px solid var(--vscode-panel-border);
   font-weight: 600;
   color: var(--vscode-descriptionForeground);
   z-index: 2;
-  font-size: 13px;
+  font-size: 12px;
 }
+
 td {
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-bottom: 1px solid var(--vscode-panel-border);
-  line-height: 1.5;
+  line-height: 1.4;
 }
+
 tr:hover td {
   background: var(--vscode-list-hoverBackground);
 }
+
 .col-check {
-  width: 30px;
+  width: 32px;
   text-align: center;
 }
 .col-name {
-  min-width: 120px;
-  font-weight: 500;
+  width: 20%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .col-path {
-  min-width: 140px;
+  width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--vscode-descriptionForeground);
   font-size: 0.9em;
 }
 .col-size {
-  min-width: 70px;
+  width: 15%;
   text-align: right;
   font-size: 0.9em;
 }
 .col-mtime {
-  min-width: 130px;
+  width: 25%;
   font-size: 0.9em;
   color: var(--vscode-descriptionForeground);
 }
+
 input[type="checkbox"] {
   accent-color: var(--vscode-checkbox-background);
   cursor: pointer;
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
 }
 
 .empty-state {
@@ -372,11 +387,11 @@ input[type="checkbox"] {
   justify-content: center;
   height: 100%;
   color: var(--vscode-descriptionForeground);
-  gap: 8px;
-  font-size: 15px;
+  gap: 6px;
+  font-size: 14px;
 }
 .empty-state i {
-  font-size: 36px;
+  font-size: 32px;
   opacity: 0.25;
 }
 

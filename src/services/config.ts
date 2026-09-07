@@ -58,16 +58,37 @@ export async function generateConfigTemplate(
 
   const template = `{
     // File extensions for reference files (without dot)
-    // These files will be read as content sources
-    "referenceExtensions": ["md", "txt", "rst"],
-
-    // File extensions for target files (without dot)
-    // These files will be checked against reference content
-    "targetExtensions": ["png", "jpg", "jpeg", "gif", "svg", "ico", "webp"],
-
-    // Additional folders to exclude (merged with .gitignore)
-    "excludeFolders": ["node_modules", "dist", ".git", "__pycache__"],
-
+  // These files will be read as content sources
+  "referenceExtensions": [
+    "md",
+    "txt",
+    "rst",
+    "html",
+    "tsx",
+    "css",
+    "py",
+    "json"
+  ],
+  // File extensions for target files (without dot)
+  // These files will be checked against reference content
+  "targetExtensions": [
+    "png",
+    "jpg",
+    "jpeg",
+    "gif",
+    "svg",
+    "ico",
+    "webp"
+  ],
+  // Additional folders to exclude (merged with .gitignore)
+  "excludeFolders": [
+    "node_modules",
+    "dist",
+    ".git",
+    "__pycache__",
+    ".vscode",
+    ".cpcleaner-cache"
+  ],
     // Paired delimiters for token extraction
     // Default pairs are sufficient for most use cases
     "pairs": {

@@ -76,6 +76,11 @@ const app = createApp({
           progressPercent.value = 100;
           progressText.value = "完成";
           break;
+        case "scanCancelled":
+          isScanning.value = false;
+          progressText.value = "已取消";
+          progressPercent.value = 0;
+          break;
         case "error":
           isScanning.value = false;
           progressText.value = "错误";
@@ -93,7 +98,10 @@ const app = createApp({
 
     // ===== UI 动作 =====
     function runScan() {
-      if (isScanning.value) return;
+      if (isScanning.value) {
+        postMessage("cancelScan");
+        return;
+      }
       postMessage("runScan");
     }
 
@@ -148,7 +156,9 @@ const app = createApp({
     function showHelp() {
       postMessage("showHelp");
     }
-
+    function clearCache() {
+      postMessage("clearCache");
+    }
     function toggleAll(e) {
       allChecked.value = e.target.checked;
     }
@@ -184,6 +194,7 @@ const app = createApp({
       openConfig,
       showHelp,
       toggleAll,
+      clearCache,
     };
   },
 });

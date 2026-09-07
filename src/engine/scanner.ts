@@ -10,13 +10,18 @@ async function collectTargetFiles(
   excludeFolders: string[],
   baseDir: string = rootDir,
   ignoreMatcher?: any,
+  abortSignal?: AbortSignal,
 ): Promise<FileInfo[]> {
+  if (abortSignal?.aborted) return [];
+
   const results: FileInfo[] = [];
 
   try {
     const entries = await fs.readdir(rootDir, { withFileTypes: true });
 
     for (const entry of entries) {
+      if (abortSignal?.aborted) return results;
+
       const fullPath = path.join(rootDir, entry.name);
       // ===== 实时匹配 .gitignore =====
       if (ignoreMatcher) {
@@ -37,6 +42,8 @@ async function collectTargetFiles(
           targetExtensions,
           excludeFolders,
           baseDir,
+          ignoreMatcher,
+          abortSignal,
         );
         results.push(...subResults);
       } else if (entry.isFile()) {
@@ -97,10 +104,12 @@ function extractTokens(
 async function extractAllTokens(
   refFiles: string[],
   pairs: Record<string, string>,
+  abortSignal?: AbortSignal,
 ): Promise<Set<string>> {
   const allTokens = new Set<string>();
 
   for (const filePath of refFiles) {
+    if (abortSignal?.aborted) return allTokens;
     try {
       const content = await fs.readFile(filePath, "utf-8");
       const fileTokens = extractTokens(content, pairs);
@@ -113,7 +122,7 @@ async function extractAllTokens(
     }
   }
   const sample = Array.from(allTokens).slice(0, 5);
-  console.log(`[extractTokens] Sample tokens:`, sample);
+  console.log("[extractTokens] Sample tokens:", sample);
   console.log(`[extractTokens] Total tokens: ${allTokens.size}`);
   return allTokens;
 }
@@ -129,39 +138,111 @@ export async function scan(options: ScanOptions): Promise<ScanResult> {
     excludeFolders,
     pairs,
     ignoreMatcher,
+    cacheData,
+    abortSignal,
   } = options;
 
-  // 1. 收集所有目标文件（并行遍历多个根目录）
+  // 1. 收集所有目标文件
   const allTargetFiles: FileInfo[] = [];
   for (const root of scanRoots) {
+    if (abortSignal?.aborted) break;
     const files = await collectTargetFiles(
       root,
       targetExtensions,
       excludeFolders,
       root,
       ignoreMatcher,
+      abortSignal,
     );
     allTargetFiles.push(...files);
   }
 
-  // 2. 提取参考令牌
-  const referencedTokens = await extractAllTokens(refFiles, pairs);
+  // 2. 缓存处理
+  let changedFiles: FileInfo[] = [];
+  let cachedStatus: Record<string, boolean> = {};
 
-  // 3. 差集计算
+  if (cacheData) {
+    for (const file of allTargetFiles) {
+      const cached = cacheData.files[file.path];
+      if (cached && cached.mtime === file.mtime && cached.size === file.size) {
+        cachedStatus[file.path] = cached.isReferenced;
+      } else {
+        changedFiles.push(file);
+      }
+    }
+  } else {
+    changedFiles = allTargetFiles;
+  }
+
+  // 3. 提取参考令牌（只对变更文件）
+  let referencedTokens = new Set<string>();
+  if (changedFiles.length > 0) {
+    referencedTokens = await extractAllTokens(refFiles, pairs, abortSignal);
+  }
+
+  // 4. 读取所有参考文件内容（用于 includes 兜底）
+  let allContent = "";
+  for (const refFile of refFiles) {
+    if (abortSignal?.aborted) break;
+    try {
+      const content = await fs.readFile(refFile, "utf-8");
+      allContent += content;
+    } catch (error) {
+      console.warn(`Skipping reference file ${refFile}:`, error);
+    }
+  }
+
+  // 5. 合并缓存结果 + 重新匹配结果
+  const finalStatus: Record<string, { isReferenced: boolean }> = {};
+
+  // 从缓存恢复
+  for (const [path, isReferenced] of Object.entries(cachedStatus)) {
+    finalStatus[path] = { isReferenced };
+  }
+
+  // 对变更的文件重新判断：定界符提取 + includes 兜底
+  for (const file of changedFiles) {
+    const isReferencedByToken = referencedTokens.has(file.name);
+    const isReferencedByIncludes = allContent.includes(file.name);
+    const isReferenced = isReferencedByToken || isReferencedByIncludes;
+    finalStatus[file.path] = { isReferenced };
+  }
+
+  if (abortSignal?.aborted) {
+    return {
+      unused: [],
+      totalScanned: allTargetFiles.length,
+      matchedCount: 0,
+      filesStatus: {},
+      allFileInfos: allTargetFiles,
+    };
+  }
+
+  // 6. 计算 unused 和 matchedCount
   const unused: FileInfo[] = [];
   let matchedCount = 0;
-
   for (const file of allTargetFiles) {
-    if (referencedTokens.has(file.name)) {
+    const status = finalStatus[file.path];
+    if (status?.isReferenced) {
       matchedCount++;
     } else {
       unused.push(file);
     }
   }
 
+  // 7. 构建 filesStatus（用于保存缓存）
+  const filesStatus: Record<string, { isReferenced: boolean }> = {};
+  for (const file of allTargetFiles) {
+    filesStatus[file.path] = {
+      isReferenced: finalStatus[file.path]?.isReferenced || false,
+    };
+  }
+
   return {
     unused,
     totalScanned: allTargetFiles.length,
     matchedCount,
+    filesStatus,
+    allFileInfos: allTargetFiles,
   };
 }

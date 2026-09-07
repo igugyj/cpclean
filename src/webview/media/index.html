@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +9,9 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <link rel="stylesheet" href="{{styleUri}}">
 </head>
+
 <body>
-    <div id="app">
+    <div id="app" class="app-container">
         <!-- 标题栏 -->
         <header class="header">
             <span class="brand-name">CompareCleaner</span>
@@ -39,7 +41,7 @@
             </div>
         </div>
 
-        <!-- 扫描范围 -->
+        <!-- 扫描范围（固定高度） -->
         <section class="tag-section">
             <div class="tag-header">
                 <span class="tag-title"><i class="fa-regular fa-folder-open"></i> 扫描范围</span>
@@ -64,7 +66,7 @@
             </div>
         </section>
 
-        <!-- 参考来源 -->
+        <!-- 参考来源（固定高度） -->
         <section class="tag-section">
             <div class="tag-header">
                 <span class="tag-title"><i class="fa-regular fa-file-lines"></i> 参考来源</span>
@@ -89,7 +91,7 @@
             </div>
         </section>
 
-        <!-- 结果表格 -->
+        <!-- 结果表格（占据剩余所有高度） -->
         <section class="result-section">
             <div class="result-header">
                 <div class="result-title">
@@ -97,9 +99,11 @@
                     <span class="count">({{ unusedFiles.length }} 个)</span>
                 </div>
                 <div class="result-actions">
-                    <button class="primary" @click="runScan">执行筛选</button>
+                    <button class="primary" :class="{ danger: isScanning }" @click="runScan">{{ isScanning ? "取消" :
+                        "执行筛选" }}</button>
                     <button @click="removeSelected">移除选中</button>
                     <button @click="clearList">清除列表</button>
+                    <button @click="clearCache" title="清理缓存">清理缓存</button>
                     <button class="danger" @click="deleteSelected">执行清理</button>
                 </div>
             </div>
@@ -134,4 +138,5 @@
 
     <script src="{{scriptUri}}"></script>
 </body>
+
 </html>

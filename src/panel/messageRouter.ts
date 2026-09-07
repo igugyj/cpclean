@@ -1,13 +1,19 @@
 import * as vscode from "vscode";
 import { PanelState } from "./PanelState";
 import { scan } from "../engine/scanner";
-import { loadConfig, ensureConfigFile } from "../services/config";
 import { collectRefFiles } from "../services/refCollector";
 import { ScanOptions } from "../engine/types";
 import trash from "trash";
 import * as fs from "fs/promises";
 import * as path from "path";
 import ignore from "ignore";
+import { loadCache, saveCache, computeConfigHash } from "../services/cache";
+import { clearCache as clearCacheFile } from "../services/cache"; // 顶部导入
+import {
+  loadConfig,
+  ensureConfigFile,
+  DEFAULT_CONFIG,
+} from "../services/config";
 
 async function loadGitignoreMatcher(rootDir: string): Promise<any> {
   const gitignorePath = path.join(rootDir, ".gitignore");
@@ -27,6 +33,7 @@ export function createMessageRouter(
   let currentTotalScanned = state.totalScanned;
   let currentFolders = state.folders;
   let currentRefs = state.refs;
+  let currentAbortController: AbortController | null = null;
   const workspaceRoot = state.workspaceRoot;
 
   async function send(type: string, payload?: any) {
@@ -34,16 +41,36 @@ export function createMessageRouter(
   }
 
   // ===== 扫描 =====
-  // ===== 扫描 =====
   async function handleScan() {
+    // 取消正在进行的扫描
+    if (currentAbortController) {
+      currentAbortController.abort();
+      currentAbortController = null;
+    }
+
     if (currentFolders.length === 0) {
       vscode.window.showErrorMessage("请至少添加一个扫描目录");
       await send("error", { message: "请至少添加一个扫描目录" });
       return;
     }
 
+    const abortController = new AbortController();
+    currentAbortController = abortController;
+
     // 1. 加载配置
-    const config = await loadConfig(workspaceRoot);
+    let config;
+    try {
+      config = await loadConfig(workspaceRoot);
+    } catch (error: any) {
+      const msg = `配置文件解析失败，已使用默认配置: ${error.message}`;
+      vscode.window.showWarningMessage(msg);
+      console.warn("[CompareCleaner] 配置解析失败，使用默认配置:", error);
+      config = { ...DEFAULT_CONFIG };
+    }
+    // 加载缓存
+    const configHash = await computeConfigHash(workspaceRoot);
+    const cache = await loadCache(workspaceRoot);
+    const cacheValid = cache && cache.configHash === configHash;
 
     // 2. 外部目录权限检查
     if (!config.allowExternalScan) {
@@ -87,15 +114,40 @@ export function createMessageRouter(
       scanRoots: currentFolders,
       refFiles,
       targetExtensions: config.targetExtensions,
-      excludeFolders: config.excludeFolders, // 不再合并，由 ignoreMatcher 实时处理
+      excludeFolders: config.excludeFolders,
       pairs: config.pairs,
-      ignoreMatcher, // 新增：传入匹配器
+      ignoreMatcher,
+      cacheData: cacheValid ? cache : undefined,
+      abortSignal: abortController.signal,
     };
 
     // 6. 执行扫描
     await send("scanStarted");
     try {
       const result = await scan(options);
+      if (abortController.signal.aborted) {
+        await send("scanCancelled");
+        return;
+      }
+
+      // 保存缓存（需要 filesStatus 和 allFileInfos）
+      if (result.filesStatus && result.allFileInfos) {
+        const cacheEntries: Record<
+          string,
+          { mtime: number; size: number; isReferenced: boolean }
+        > = {};
+        for (const file of result.allFileInfos) {
+          const status = result.filesStatus[file.path];
+          if (status !== undefined) {
+            cacheEntries[file.path] = {
+              mtime: file.mtime,
+              size: file.size,
+              isReferenced: status.isReferenced,
+            };
+          }
+        }
+        await saveCache(workspaceRoot, cacheEntries, configHash);
+      }
       currentUnused = result.unused;
       currentTotalScanned = result.totalScanned;
       await send("result", currentUnused);
@@ -104,8 +156,33 @@ export function createMessageRouter(
         matchedCount: result.matchedCount,
       });
     } catch (error: any) {
+      if (error.name === "AbortError") {
+        console.log("Scan cancelled");
+        await send("scanCancelled");
+        return;
+      }
       await send("error", { message: error.message });
       vscode.window.showErrorMessage(`扫描失败: ${error.message}`);
+    } finally {
+      currentAbortController = null;
+    }
+  }
+  // ===== 清理缓存 =====
+  async function handleClearCache() {
+    try {
+      await clearCacheFile(workspaceRoot);
+      vscode.window.showInformationMessage("缓存已清理");
+      await send("cacheCleared");
+    } catch (error: any) {
+      vscode.window.showErrorMessage(`清理缓存失败: ${error.message}`);
+    }
+  }
+
+  // ===== 取消扫描 =====
+  function handleCancelScan() {
+    if (currentAbortController) {
+      currentAbortController.abort();
+      currentAbortController = null;
     }
   }
 
@@ -285,6 +362,7 @@ export function createMessageRouter(
   return {
     handleReady,
     handleScan,
+    handleCancelScan,
     handleRemoveFromUnused,
     handleClearUnused,
     handleDeleteUnused,
@@ -295,6 +373,7 @@ export function createMessageRouter(
     handleSelectRefFiles,
     handleRemoveRef,
     handleClearRefs,
+    handleClearCache,
     handleOpenConfig,
   };
 }
