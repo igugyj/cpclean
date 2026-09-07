@@ -152,31 +152,3 @@ export async function scan(options: ScanOptions): Promise<ScanResult> {
   };
 }
 
-// 临时测试（仅用于开发阶段验证）
-// 在项目根目录创建 test-data/ 文件夹，放入一些测试文件
-if (require.main === module) {
-  (async () => {
-    const testOptions: ScanOptions = {
-      scanRoots: ["D:/Workspace/408/Diary/assets/2026-09-06"],
-      refFiles: ["D:/Workspace/408/Diary/2026-09-06.md"],
-      targetExtensions: ["png", "jpg", "svg"],
-      excludeFolders: ["node_modules", ".git"],
-      pairs: {
-        "(": ")",
-        '"': '"',
-        "'": "'",
-        "`": "`",
-        "[": "]",
-        "<": ">",
-      },
-    };
-
-    const result = await scan(testOptions);
-    console.log("Total scanned:", result.totalScanned);
-    console.log("Matched:", result.matchedCount);
-    console.log(
-      "Unused files:",
-      result.unused.map((f) => f.name),
-    );
-  })().catch(console.error);
-}

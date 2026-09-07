@@ -43,3 +43,21 @@ export interface ScanResult {
   /** 被引用的文件数量 */
   matchedCount: number;
 }
+
+/**
+ * 插件配置（从 .vscode/cpcleaner.jsonc 读取）
+ */
+export interface CleanerConfig {
+    /** 参考文件扩展名列表（不带点），如 ["md", "txt"] */
+    referenceExtensions: string[];
+    /** 目标文件扩展名列表（不带点），如 ["png", "jpg"] */
+    targetExtensions: string[];
+    /** 额外排除的文件夹名称（合并 .gitignore） */
+    excludeFolders: string[];
+    /** 配对定界符，如 { "(": ")", "\"": "\"" } */
+    pairs: Record<string, string>;
+    /** 扫描根目录（相对于工作区根目录），空字符串表示使用工作区根目录 */
+    scanRoot: string;
+    /** 是否允许扫描工作区外的目录，默认 false */
+    allowExternalScan: boolean;
+}
