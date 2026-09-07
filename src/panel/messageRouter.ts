@@ -2,8 +2,7 @@ import * as vscode from "vscode";
 import { PanelState } from "./PanelState";
 import { scan } from "../engine/scanner";
 import { collectRefFiles } from "../services/refCollector";
-import { ScanOptions } from "../engine/types";
-import trash from "trash";
+import { ScanOptions, ScanResult } from "../engine/types";
 import * as fs from "fs/promises";
 import * as path from "path";
 import ignore from "ignore";
@@ -14,6 +13,7 @@ import {
   ensureConfigFile,
   DEFAULT_CONFIG,
 } from "../services/config";
+import trash from "trash";
 
 async function loadGitignoreMatcher(rootDir: string): Promise<any> {
   const gitignorePath = path.join(rootDir, ".gitignore");
@@ -57,7 +57,7 @@ export function createMessageRouter(
     const abortController = new AbortController();
     currentAbortController = abortController;
 
-    // 1. 加载配置
+    // 1. 加载配置（带容错）
     let config;
     try {
       config = await loadConfig(workspaceRoot);
@@ -67,6 +67,7 @@ export function createMessageRouter(
       console.warn("[CompareCleaner] 配置解析失败，使用默认配置:", error);
       config = { ...DEFAULT_CONFIG };
     }
+
     // 加载缓存
     const configHash = await computeConfigHash(workspaceRoot);
     const cache = await loadCache(workspaceRoot);
@@ -86,7 +87,7 @@ export function createMessageRouter(
       }
     }
 
-    // 3. 加载 .gitignore 匹配器（实时匹配）
+    // 3. 加载 .gitignore 匹配器
     const ignoreMatcher = await loadGitignoreMatcher(workspaceRoot);
 
     // 4. 收集参考文件
@@ -96,7 +97,7 @@ export function createMessageRouter(
         workspaceRoot,
         config.referenceExtensions,
         config.excludeFolders,
-        ignoreMatcher, // 传入匹配器
+        ignoreMatcher,
       );
       if (refFiles.length === 0) {
         vscode.window.showErrorMessage(
@@ -121,51 +122,71 @@ export function createMessageRouter(
       abortSignal: abortController.signal,
     };
 
-    // 6. 执行扫描
+    // 6. 执行扫描（带原生进度通知）
     await send("scanStarted");
-    try {
-      const result = await scan(options);
-      if (abortController.signal.aborted) {
-        await send("scanCancelled");
-        return;
-      }
 
-      // 保存缓存（需要 filesStatus 和 allFileInfos）
-      if (result.filesStatus && result.allFileInfos) {
-        const cacheEntries: Record<
-          string,
-          { mtime: number; size: number; isReferenced: boolean }
-        > = {};
-        for (const file of result.allFileInfos) {
-          const status = result.filesStatus[file.path];
-          if (status !== undefined) {
-            cacheEntries[file.path] = {
-              mtime: file.mtime,
-              size: file.size,
-              isReferenced: status.isReferenced,
-            };
-          }
-        }
-        await saveCache(workspaceRoot, cacheEntries, configHash);
-      }
-      currentUnused = result.unused;
-      currentTotalScanned = result.totalScanned;
-      await send("result", currentUnused);
-      await send("scanFinished", {
-        totalScanned: currentTotalScanned,
-        matchedCount: result.matchedCount,
-      });
+    let result: ScanResult;
+    try {
+      result = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: "CompareCleaner: 正在扫描未引用文件...",
+          cancellable: true,
+        },
+        async (progress, token) => {
+          token.onCancellationRequested(() => {
+            if (abortController) {
+              abortController.abort();
+            }
+          });
+          return await scan(options);
+        },
+      );
     } catch (error: any) {
-      if (error.name === "AbortError") {
-        console.log("Scan cancelled");
+      if (error.name === "AbortError" || abortController?.signal.aborted) {
         await send("scanCancelled");
         return;
       }
       await send("error", { message: error.message });
       vscode.window.showErrorMessage(`扫描失败: ${error.message}`);
-    } finally {
-      currentAbortController = null;
+      return;
     }
+
+    // 检查是否被取消
+    if (abortController?.signal.aborted) {
+      await send("scanCancelled");
+      return;
+    }
+
+    // 保存缓存
+    if (result.filesStatus && result.allFileInfos) {
+      const cacheEntries: Record<
+        string,
+        { mtime: number; size: number; isReferenced: boolean }
+      > = {};
+      for (const file of result.allFileInfos) {
+        const status = result.filesStatus[file.path];
+        if (status !== undefined) {
+          cacheEntries[file.path] = {
+            mtime: file.mtime,
+            size: file.size,
+            isReferenced: status.isReferenced,
+          };
+        }
+      }
+      await saveCache(workspaceRoot, cacheEntries, configHash);
+    }
+
+    currentUnused = result.unused;
+    currentTotalScanned = result.totalScanned;
+    await send("result", currentUnused);
+    await send("scanFinished", {
+      totalScanned: currentTotalScanned,
+      matchedCount: result.matchedCount,
+    });
+
+    // 清理控制器
+    currentAbortController = null;
   }
   // ===== 清理缓存 =====
   async function handleClearCache() {
