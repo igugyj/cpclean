@@ -5,6 +5,19 @@ import { loadConfig, ensureConfigFile } from "../services/config";
 import { collectRefFiles } from "../services/refCollector";
 import { ScanOptions } from "../engine/types";
 import trash from "trash";
+import * as fs from "fs/promises";
+import * as path from "path";
+import ignore from "ignore";
+
+async function loadGitignoreMatcher(rootDir: string): Promise<any> {
+  const gitignorePath = path.join(rootDir, ".gitignore");
+  try {
+    const content = await fs.readFile(gitignorePath, "utf-8");
+    return ignore().add(content);
+  } catch {
+    return null;
+  }
+}
 
 export function createMessageRouter(
   state: PanelState,
@@ -21,6 +34,7 @@ export function createMessageRouter(
   }
 
   // ===== 扫描 =====
+  // ===== 扫描 =====
   async function handleScan() {
     if (currentFolders.length === 0) {
       vscode.window.showErrorMessage("请至少添加一个扫描目录");
@@ -28,13 +42,34 @@ export function createMessageRouter(
       return;
     }
 
+    // 1. 加载配置
+    const config = await loadConfig(workspaceRoot);
+
+    // 2. 外部目录权限检查
+    if (!config.allowExternalScan) {
+      for (const root of currentFolders) {
+        const normalizedRoot = path.normalize(root);
+        const normalizedWorkspace = path.normalize(workspaceRoot);
+        if (!normalizedRoot.startsWith(normalizedWorkspace)) {
+          const msg = `扫描目录 "${root}" 不在工作区内，请设置 "allowExternalScan": true 允许外部扫描`;
+          vscode.window.showErrorMessage(msg);
+          await send("error", { message: msg });
+          return;
+        }
+      }
+    }
+
+    // 3. 加载 .gitignore 匹配器（实时匹配）
+    const ignoreMatcher = await loadGitignoreMatcher(workspaceRoot);
+
+    // 4. 收集参考文件
     let refFiles: string[] = [];
     if (currentRefs.length === 0) {
-      const config = await loadConfig(workspaceRoot);
       refFiles = await collectRefFiles(
         workspaceRoot,
         config.referenceExtensions,
         config.excludeFolders,
+        ignoreMatcher, // 传入匹配器
       );
       if (refFiles.length === 0) {
         vscode.window.showErrorMessage(
@@ -47,15 +82,17 @@ export function createMessageRouter(
       refFiles = currentRefs;
     }
 
-    const config = await loadConfig(workspaceRoot);
+    // 5. 构造扫描选项
     const options: ScanOptions = {
       scanRoots: currentFolders,
       refFiles,
       targetExtensions: config.targetExtensions,
-      excludeFolders: config.excludeFolders,
+      excludeFolders: config.excludeFolders, // 不再合并，由 ignoreMatcher 实时处理
       pairs: config.pairs,
+      ignoreMatcher, // 新增：传入匹配器
     };
 
+    // 6. 执行扫描
     await send("scanStarted");
     try {
       const result = await scan(options);

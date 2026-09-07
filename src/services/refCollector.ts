@@ -5,6 +5,7 @@ export async function collectRefFiles(
   rootDir: string,
   extensions: string[],
   excludeFolders: string[],
+  ignoreMatcher?: any,
 ): Promise<string[]> {
   const results: string[] = [];
 
@@ -13,6 +14,13 @@ export async function collectRefFiles(
       const entries = await fs.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
+        // ===== 实时匹配 .gitignore =====
+        if (ignoreMatcher) {
+          const relativePath = path.relative(rootDir, fullPath);
+          if (ignoreMatcher.ignores(relativePath)) {
+            continue;
+          }
+        }
         if (entry.isDirectory() && excludeFolders.includes(entry.name)) {
           continue;
         }

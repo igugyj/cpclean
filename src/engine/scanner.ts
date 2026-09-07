@@ -9,6 +9,7 @@ async function collectTargetFiles(
   targetExtensions: string[],
   excludeFolders: string[],
   baseDir: string = rootDir,
+  ignoreMatcher?: any,
 ): Promise<FileInfo[]> {
   const results: FileInfo[] = [];
 
@@ -17,7 +18,13 @@ async function collectTargetFiles(
 
     for (const entry of entries) {
       const fullPath = path.join(rootDir, entry.name);
-
+      // ===== 实时匹配 .gitignore =====
+      if (ignoreMatcher) {
+        const relativePath = path.relative(baseDir, fullPath);
+        if (ignoreMatcher.ignores(relativePath)) {
+          continue;
+        }
+      }
       // 排除指定的文件夹
       if (entry.isDirectory() && excludeFolders.includes(entry.name)) {
         continue;
@@ -115,8 +122,14 @@ async function extractAllTokens(
  * 主扫描函数：遍历目标文件，与参考令牌比对，返回未引用列表
  */
 export async function scan(options: ScanOptions): Promise<ScanResult> {
-  const { scanRoots, refFiles, targetExtensions, excludeFolders, pairs } =
-    options;
+  const {
+    scanRoots,
+    refFiles,
+    targetExtensions,
+    excludeFolders,
+    pairs,
+    ignoreMatcher,
+  } = options;
 
   // 1. 收集所有目标文件（并行遍历多个根目录）
   const allTargetFiles: FileInfo[] = [];
@@ -126,6 +139,7 @@ export async function scan(options: ScanOptions): Promise<ScanResult> {
       targetExtensions,
       excludeFolders,
       root,
+      ignoreMatcher,
     );
     allTargetFiles.push(...files);
   }
@@ -151,4 +165,3 @@ export async function scan(options: ScanOptions): Promise<ScanResult> {
     matchedCount,
   };
 }
-

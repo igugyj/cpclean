@@ -31,6 +31,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "ignore": "^7.0.8",
     "strip-json-comments": "^5.0.3",
     "trash": "^9.0.0"
   }
