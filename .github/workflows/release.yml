@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Dry-run mode (preview only, no actual release)"
+        description: 'Dry-run mode (preview only, no actual release)'
         required: false
         default: true
         type: boolean
@@ -25,20 +25,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install          # 改用 install，避免 lock 不同步问题
 
       - name: Compile TypeScript
         run: npm run compile
 
-      - name: Install vsce
-        run: npm install -g @vscode/vsce
-
       - name: Package extension
-        run: vsce package
+        run: npx vsce package     # 使用 npx 调用本地 vsce
 
       - name: Extract version from package.json
         id: version
