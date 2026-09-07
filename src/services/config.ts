@@ -6,7 +6,7 @@ import { CleanerConfig } from "../engine/types";
 
 // 默认配置
 export const DEFAULT_CONFIG: CleanerConfig = {
-  referenceExtensions: ["md", "txt", "rst"],
+  referenceExtensions: ["md", "txt", "rst", "html", "tsx", "css", "py", "json"],
   targetExtensions: ["png", "jpg", "jpeg", "gif", "svg", "ico", "webp"],
   excludeFolders: ["node_modules", "dist", ".git", "__pycache__"],
   pairs: {

@@ -1,2 +1,7 @@
 node_modules
 dist
+*.vsix
+*.md
+!README.md
+!README.zh-CN.md
+.vscode/cpcleaner.jsonc

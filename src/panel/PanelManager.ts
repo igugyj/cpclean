@@ -93,8 +93,21 @@ export async function createPanel(
         case "clearCache":
           await router.handleClearCache();
           break;
+        case "openFile":
+          const filePath = message.payload.path;
+          if (filePath) {
+            try {
+              const uri = vscode.Uri.file(filePath);
+              await vscode.commands.executeCommand("vscode.open", uri);
+            } catch (error: any) {
+              vscode.window.showErrorMessage(
+                `Cannot open file: ${error.message}`,
+              );
+            }
+          }
+          break;
         default:
-          console.warn("[PanelManager] 未知消息:", message.type);
+          console.warn("[PanelManager] Unknown message:", message.type);
       }
     },
     undefined,

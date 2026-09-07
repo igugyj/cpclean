@@ -1,0 +1,11 @@
+.vscode/
+.git/
+src/
+tsconfig.json
+*.vsix
+.DS_Store
+*.md
+!README.md
+!README.zh-CN.md
+src/**/*.ts
+!src/webview/media/**/*

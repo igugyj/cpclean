@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- 深色圆角方形背景（蓝紫色渐变） -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B" />
+      <stop offset="100%" stop-color="#4C1D95" />
+    </linearGradient>
+
+    <!-- 文件夹蓝色渐变（现代扁平风格） -->
+    <linearGradient id="folderGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+
+    <!-- 放大镜紫色渐变 -->
+    <linearGradient id="magGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A78BFA" />
+      <stop offset="100%" stop-color="#7C3AED" />
+    </linearGradient>
+
+    <!-- 绿色对勾徽章渐变 -->
+    <linearGradient id="badgeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <!-- 元素投影（增加干净利落的层次感） -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+
+    <!-- 白色点缀发光效果 -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#FFFFFF" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- 1. 深色圆角方形背景 -->
+  <rect width="512" height="512" rx="110" fill="url(#bgGrad)" />
+
+  <!-- 2. 居中文件夹主体 -->
+  <g filter="url(#shadow)">
+    <!-- 文件夹下侧主体 -->
+    <path d="M 136 240 L 136 350 Q 136 380 166 380 L 346 380 Q 376 380 376 350 L 376 240 Z" fill="url(#folderGrad)" />
+    <!-- 文件夹上侧翻盖 -->
+    <path d="M 136 240 L 136 210 Q 136 180 166 180 L 226 180 L 256 240 Z" fill="#93C5FD" />
+  </g>
+
+  <!-- 3. 居中放大镜（与文件夹重叠，体现搜索功能） -->
+  <g filter="url(#shadow)">
+    <!-- 放大镜手柄 -->
+    <line x1="320" y1="270" x2="375" y2="325" stroke="url(#magGrad)" stroke-width="28" stroke-linecap="round" />
+    <!-- 放大镜镜身 -->
+    <circle cx="270" cy="220" r="60" fill="none" stroke="url(#magGrad)" stroke-width="28" />
+  </g>
+
+  <!-- 4. 文件夹底部的绿色对勾徽章 -->
+  <g filter="url(#shadow)">
+    <!-- 徽章圆形底衬 -->
+    <circle cx="256" cy="350" r="34" fill="url(#badgeGrad)" />
+    <!-- 白色对勾 -->
+    <path d="M 242 350 L 252 358 L 270 340" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- 5. 白色点缀（极简高光线条，提升现代感） -->
+  <!-- 放大镜边缘白色高光 -->
+  <path d="M 228 178 A 60 60 0 0 1 312 178" fill="none" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="6" stroke-linecap="round" filter="url(#glow)" />
+  <!-- 文件夹翻盖边缘白色高光 -->
+  <path d="M 146 200 L 146 220 L 220 220" fill="none" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="6" stroke-linecap="round" filter="url(#glow)" />
+</svg>

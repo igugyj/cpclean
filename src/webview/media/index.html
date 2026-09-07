@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -16,16 +16,17 @@
         <header class="header">
             <span class="brand-name">CompareCleaner</span>
             <div class="header-actions">
-                <button @click="reset" title="重置"><i class="fa-solid fa-rotate"></i></button>
-                <button @click="openConfig" title="配置"><i class="fa-solid fa-gear"></i></button>
-                <button @click="showHelp" title="帮助"><i class="fa-regular fa-circle-question"></i></button>
+                <button @click="reset" title="Reset"><i class="fa-solid fa-rotate"></i></button>
+                <button @click="openConfig" title="Config"><i class="fa-solid fa-gear"></i></button>
             </div>
         </header>
 
         <!-- 警示栏 -->
         <div class="footer-warning">
             <i class="fa-solid fa-triangle-exclamation"></i>
-            <span>目标文件请选择文本类型文件。清理后的文件将移至回收站，请您在清理之前仔细审核。</span>
+            <span>Please select text-type files as targets. Cleaned files will be moved to trash. Please review
+                carefully before
+                cleaning.</span>
         </div>
 
         <!-- 状态栏 -->
@@ -33,7 +34,7 @@
             <div class="status-row">
                 <div class="workspace">
                     <i class="fa-regular fa-folder-open"></i>
-                    <span>{{ workspaceRoot || '未打开工作区' }}</span>
+                    <span>{{ workspaceRoot || 'No workspace opened' }}</span>
                 </div>
                 <div class="status-info">
                     <span class="status-text" :class="statusClass">{{ statusText }}</span>
@@ -44,10 +45,10 @@
         <!-- 扫描范围（固定高度） -->
         <section class="tag-section">
             <div class="tag-header">
-                <span class="tag-title"><i class="fa-regular fa-folder-open"></i> 扫描范围</span>
+                <span class="tag-title"><i class="fa-regular fa-folder-open"></i> Scan Scope</span>
                 <div class="tag-actions">
-                    <button @click="addFolder" title="添加文件夹"><i class="fa-regular fa-plus"></i></button>
-                    <button @click="clearFolders" title="清空"><i class="fa-regular fa-trash-can"></i></button>
+                    <button @click="addFolder" title="Add Folder"><i class="fa-regular fa-plus"></i></button>
+                    <button @click="clearFolders" title="Clear"><i class="fa-regular fa-trash-can"></i></button>
                 </div>
             </div>
             <div class="tag-container">
@@ -55,13 +56,13 @@
                     <div v-for="(f, idx) in folders" :key="idx" class="tag-item">
                         <i class="fa-regular fa-folder"></i>
                         <span class="tag-text">{{ f }}</span>
-                        <button class="tag-remove" @click="removeFolder(idx)" title="移除">&times;</button>
+                        <button class="tag-remove" @click="removeFolder(idx)" title="Remove">&times;</button>
                     </div>
                 </template>
                 <div v-else class="tag-placeholder">
                     <i class="fa-regular fa-folder"></i>
-                    <span>暂无，请添加扫描目录</span>
-                    <span class="tag-hint">点击 + 添加</span>
+                    <span>None yet, add scan directories</span>
+                    <span class="tag-hint">Click + to add</span>
                 </div>
             </div>
         </section>
@@ -69,10 +70,10 @@
         <!-- 参考来源（固定高度） -->
         <section class="tag-section">
             <div class="tag-header">
-                <span class="tag-title"><i class="fa-regular fa-file-lines"></i> 参考来源</span>
+                <span class="tag-title"><i class="fa-regular fa-file-lines"></i> Reference Sources</span>
                 <div class="tag-actions">
-                    <button @click="addFile" title="添加文件"><i class="fa-regular fa-plus"></i></button>
-                    <button @click="clearRefs" title="清空"><i class="fa-regular fa-trash-can"></i></button>
+                    <button @click="addFile" title="Add File"><i class="fa-regular fa-plus"></i></button>
+                    <button @click="clearRefs" title="Clear"><i class="fa-regular fa-trash-can"></i></button>
                 </div>
             </div>
             <div class="tag-container">
@@ -80,13 +81,14 @@
                     <div v-for="(f, idx) in refs" :key="'ref-' + idx" class="tag-item">
                         <i class="fa-regular fa-file"></i>
                         <span class="tag-text">{{ f }}</span>
-                        <button class="tag-remove" @click="removeRef(idx)" title="移除">&times;</button>
+                        <button class="tag-remove" @click="removeRef(idx)" title="Remove">&times;</button>
                     </div>
                 </template>
                 <div v-else class="tag-placeholder">
                     <i class="fa-regular fa-file-lines"></i>
-                    <span>自动收集: *.md, *.txt, *.rst</span>
-                    <span class="tag-hint">（默认）</span>
+                    <span>Auto-collected: {{ referenceExtensions.length ? referenceExtensions.map(ext => '*.' + ext).join(', ') :
+                        '*.md,*.txt, *.rst' }}</span>
+                    <span class="tag-hint">(default)</span>
                 </div>
             </div>
         </section>
@@ -95,36 +97,36 @@
         <section class="result-section">
             <div class="result-header">
                 <div class="result-title">
-                    <i class="fa-regular fa-trash-can"></i> 未引用的文件
-                    <span class="count">({{ unusedFiles.length }} 个)</span>
+                    <i class="fa-regular fa-trash-can"></i> Unreferenced Files
+                    <span class="count">({{ unusedFiles.length }})</span>
                 </div>
                 <div class="result-actions">
-                    <button class="primary" :class="{ danger: isScanning }" @click="runScan">{{ isScanning ? "取消" :
-                        "执行筛选" }}</button>
-                    <button @click="removeSelected">移除选中</button>
-                    <button @click="clearList">清除列表</button>
-                    <button @click="clearCache" title="清理缓存">清理缓存</button>
-                    <button class="danger" @click="deleteSelected">执行清理</button>
+                    <button class="primary" :class="{ danger: isScanning }" @click="runScan">{{ isScanning ? "Cancel" :
+                        "Run Scan" }}</button>
+                    <button @click="removeSelected">Remove Selected</button>
+                    <button @click="clearList">Clear List</button>
+                    <button @click="clearCache" title="Clear Cache">Clear Cache</button>
+                    <button class="danger" @click="deleteSelected">Clean Up</button>
                 </div>
             </div>
             <div class="table-wrapper">
                 <div v-if="!unusedFiles || unusedFiles.length === 0" class="empty-state">
                     <i class="fa-regular fa-circle-check"></i>
-                    <span>{{ isScanning ? '扫描中...' : '点击「执行筛选」开始扫描' }}</span>
+                    <span>{{ isScanning ? 'Scanning...' : 'Click "Run Scan" to start scanning' }}</span>
                 </div>
                 <table v-else>
                     <thead>
                         <tr>
                             <th class="col-check"><input type="checkbox" @change="toggleAll" :checked="allChecked"></th>
-                            <th class="col-name">文件名</th>
-                            <th class="col-path">相对路径</th>
-                            <th class="col-size">大小</th>
-                            <th class="col-mtime">修改时间</th>
+                            <th class="col-name">File Name</th>
+                            <th class="col-path">Relative Path</th>
+                            <th class="col-size">Size</th>
+                            <th class="col-mtime">Modified</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="(file, idx) in unusedFiles" :key="idx">
-                            <td class="col-check"><input type="checkbox" v-model="checkedIndices" :value="idx"></td>
+                        <tr v-for="(file, idx) in unusedFiles" :key="idx" @dblclick="openFile(file.path)" style="cursor:pointer;">
+                            <td class="col-check"><input type="checkbox" v-model="checkedIndices" :value="idx" @click.stop @dblclick.stop></td>
                             <td class="col-name">{{ file.name }}</td>
                             <td class="col-path">{{ file.relativePath }}</td>
                             <td class="col-size">{{ (file.size / 1024).toFixed(1) }} KB</td>

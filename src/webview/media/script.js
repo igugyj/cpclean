@@ -12,22 +12,22 @@ const app = createApp({
     const checkedIndices = ref([]);
     const isScanning = ref(false);
     const progressPercent = ref(0);
-    const progressText = ref("就绪");
-
+    const progressText = ref("Ready");
+    const referenceExtensions = ref([]);
     // ===== 计算属性 =====
     const statusText = computed(() => {
       if (isScanning.value) {
-        return `扫描中... ${Math.round(progressPercent.value)}%`;
+        return `Scanning... ${Math.round(progressPercent.value)}%`;
       }
-      if (progressPercent.value >= 100 && progressText.value === "完成") {
-        return "完成";
+      if (progressPercent.value >= 100 && progressText.value === "Done") {
+        return "Done";
       }
-      return "就绪";
+      return "Ready";
     });
 
     const statusClass = computed(() => {
       if (isScanning.value) return "scanning";
-      if (progressPercent.value >= 100 && progressText.value === "完成")
+      if (progressPercent.value >= 100 && progressText.value === "Done")
         return "done";
       return "idle";
     });
@@ -54,36 +54,42 @@ const app = createApp({
     // ===== 消息接收 =====
     window.addEventListener("message", (event) => {
       const msg = event.data;
-      console.log("[Vue] 收到消息:", msg);
+      console.log("[Vue] Received message:", msg);
       switch (msg.type) {
         case "init":
           workspaceRoot.value = msg.payload.workspaceRoot || "";
+          referenceExtensions.value = msg.payload.referenceExtensions || [];
           break;
         case "result":
           unusedFiles.value = msg.payload || [];
           checkedIndices.value = [];
           isScanning.value = false;
           progressPercent.value = 100;
-          progressText.value = "完成";
+          progressText.value = "Done";
           break;
         case "scanStarted":
           isScanning.value = true;
           progressPercent.value = 0;
-          progressText.value = "扫描中";
+          progressText.value = "Scanning";
           break;
         case "scanFinished":
           isScanning.value = false;
-          progressPercent.value = 100;
-          progressText.value = "完成";
+          if (msg.payload.totalScanned === 0) {
+            progressPercent.value = 0;
+            progressText.value = "Ready";
+          } else {
+            progressPercent.value = 100;
+            progressText.value = "Done";
+          }
           break;
         case "scanCancelled":
           isScanning.value = false;
-          progressText.value = "已取消";
+          progressText.value = "Cancelled";
           progressPercent.value = 0;
           break;
         case "error":
           isScanning.value = false;
-          progressText.value = "错误";
+          progressText.value = "Error";
           break;
         case "foldersUpdated":
           folders.value = msg.payload || [];
@@ -92,7 +98,7 @@ const app = createApp({
           refs.value = msg.payload || [];
           break;
         default:
-          console.warn("[Vue] 未知消息:", msg.type);
+          console.warn("[Vue] Unknown message:", msg.type);
       }
     });
 
@@ -139,7 +145,7 @@ const app = createApp({
       if (indices.length === 0) {
         vscode.postMessage({
           type: "warning",
-          payload: "请先勾选要删除的文件",
+          payload: "Please select files to delete first",
         });
         return;
       }
@@ -153,9 +159,6 @@ const app = createApp({
     function openConfig() {
       postMessage("openConfig");
     }
-    function showHelp() {
-      postMessage("showHelp");
-    }
     function clearCache() {
       postMessage("clearCache");
     }
@@ -167,6 +170,10 @@ const app = createApp({
     onMounted(() => {
       postMessage("ready");
     });
+
+    function openFile(filePath) {
+      postMessage("openFile", { path: filePath });
+    }
 
     return {
       workspaceRoot,
@@ -180,6 +187,7 @@ const app = createApp({
       statusText,
       statusClass,
       allChecked,
+      referenceExtensions,
       runScan,
       addFolder,
       addFile,
@@ -192,9 +200,9 @@ const app = createApp({
       deleteSelected,
       reset,
       openConfig,
-      showHelp,
       toggleAll,
       clearCache,
+      openFile,
     };
   },
 });

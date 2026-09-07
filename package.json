@@ -2,11 +2,34 @@
   "name": "comparecleaner",
   "displayName": "CompareCleaner",
   "description": "Find and clean unused files by comparing with reference files.",
-  "version": "0.0.1",
+  "version": "0.1.0",
+  "publisher": "igugyj",
+  "icon": "resources/icon.png",
+  "readme": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/igugyj/cpclean"
+  },
+  "homepage": "https://github.com/igugyj/cpclean",
+  "bugs": {
+    "url": "https://github.com/igugyj/cpclean/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "cleaner",
+    "unused",
+    "files",
+    "reference",
+    "scan",
+    "compare",
+    "cleanup",
+    "assets"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
+    "Linters",
     "Other"
   ],
   "activationEvents": [
@@ -23,12 +46,15 @@
   },
   "scripts": {
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
     "@types/vscode": "^1.85.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "@vscode/vsce": "^2.0.0"
   },
   "dependencies": {
     "ignore": "^7.0.8",

@@ -49,8 +49,10 @@ export function createMessageRouter(
     }
 
     if (currentFolders.length === 0) {
-      vscode.window.showErrorMessage("请至少添加一个扫描目录");
-      await send("error", { message: "请至少添加一个扫描目录" });
+      vscode.window.showErrorMessage("Please add at least one scan directory");
+      await send("error", {
+        message: "Please add at least one scan directory",
+      });
       return;
     }
 
@@ -62,9 +64,12 @@ export function createMessageRouter(
     try {
       config = await loadConfig(workspaceRoot);
     } catch (error: any) {
-      const msg = `配置文件解析失败，已使用默认配置: ${error.message}`;
+      const msg = `Config file parsing failed, using default config: ${error.message}`;
       vscode.window.showWarningMessage(msg);
-      console.warn("[CompareCleaner] 配置解析失败，使用默认配置:", error);
+      console.warn(
+        "[CompareCleaner] Config parsing failed, using default config:",
+        error,
+      );
       config = { ...DEFAULT_CONFIG };
     }
 
@@ -79,7 +84,7 @@ export function createMessageRouter(
         const normalizedRoot = path.normalize(root);
         const normalizedWorkspace = path.normalize(workspaceRoot);
         if (!normalizedRoot.startsWith(normalizedWorkspace)) {
-          const msg = `扫描目录 "${root}" 不在工作区内，请设置 "allowExternalScan": true 允许外部扫描`;
+          const msg = `Scan directory "${root}" is outside workspace, set "allowExternalScan": true to allow external scanning`;
           vscode.window.showErrorMessage(msg);
           await send("error", { message: msg });
           return;
@@ -101,9 +106,9 @@ export function createMessageRouter(
       );
       if (refFiles.length === 0) {
         vscode.window.showErrorMessage(
-          `未找到任何参考文件（扩展名: ${config.referenceExtensions.join(", ")}）`,
+          `No reference files found (extensions: ${config.referenceExtensions.join(", ")})`,
         );
-        await send("error", { message: "未找到任何参考文件" });
+        await send("error", { message: "No reference files found" });
         return;
       }
     } else {
@@ -130,7 +135,7 @@ export function createMessageRouter(
       result = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: "CompareCleaner: 正在扫描未引用文件...",
+          title: "CompareCleaner: Scanning unreferenced files...",
           cancellable: true,
         },
         async (progress, token) => {
@@ -148,7 +153,7 @@ export function createMessageRouter(
         return;
       }
       await send("error", { message: error.message });
-      vscode.window.showErrorMessage(`扫描失败: ${error.message}`);
+      vscode.window.showErrorMessage(`Scan failed: ${error.message}`);
       return;
     }
 
@@ -192,10 +197,10 @@ export function createMessageRouter(
   async function handleClearCache() {
     try {
       await clearCacheFile(workspaceRoot);
-      vscode.window.showInformationMessage("缓存已清理");
+      vscode.window.showInformationMessage("Cache cleared");
       await send("cacheCleared");
     } catch (error: any) {
-      vscode.window.showErrorMessage(`清理缓存失败: ${error.message}`);
+      vscode.window.showErrorMessage(`Failed to clear cache: ${error.message}`);
     }
   }
 
@@ -236,7 +241,7 @@ export function createMessageRouter(
   async function handleDeleteUnused(indices: number[]) {
     // 1. 检查是否有选中文件
     if (indices.length === 0 || currentUnused.length === 0) {
-      vscode.window.showWarningMessage("请先勾选要删除的文件");
+      vscode.window.showWarningMessage("Please select files to delete first");
       return;
     }
 
@@ -248,12 +253,12 @@ export function createMessageRouter(
 
     // 3. 弹窗确认
     const answer = await vscode.window.showWarningMessage(
-      `确定要删除 ${filesToDelete.length} 个文件吗？文件将移至回收站。`,
+      `Are you sure you want to delete ${filesToDelete.length} file(s)? Files will be moved to trash.`,
       { modal: true },
-      "确认删除",
-      "取消",
+      "Confirm Delete",
+      "Cancel",
     );
-    if (answer !== "确认删除") return;
+    if (answer !== "Confirm Delete") return;
 
     // 4. 执行删除
     try {
@@ -275,10 +280,10 @@ export function createMessageRouter(
         matchedCount: currentTotalScanned - currentUnused.length,
       });
       vscode.window.showInformationMessage(
-        `成功删除 ${filesToDelete.length} 个文件`,
+        `Successfully deleted ${filesToDelete.length} file(s)`,
       );
     } catch (error: any) {
-      vscode.window.showErrorMessage(`删除失败: ${error.message}`);
+      vscode.window.showErrorMessage(`Delete failed: ${error.message}`);
     }
   }
   // ===== 重置 =====
@@ -295,11 +300,11 @@ export function createMessageRouter(
 
   async function handleRequestResetConfirm() {
     const answer = await vscode.window.showWarningMessage(
-      "确定要重置所有列表吗？",
+      "Are you sure you want to reset all lists?",
       { modal: true },
-      "确认",
+      "Confirm",
     );
-    if (answer === "确认") {
+    if (answer === "Confirm") {
       await handleReset();
     }
   }
@@ -310,7 +315,7 @@ export function createMessageRouter(
       canSelectFolders: true,
       canSelectFiles: false,
       canSelectMany: true,
-      title: "选择扫描文件夹",
+      title: "Select Scan Folders",
       defaultUri: vscode.Uri.file(workspaceRoot),
     });
     if (uris && uris.length > 0) {
@@ -337,7 +342,7 @@ export function createMessageRouter(
       canSelectFolders: false,
       canSelectFiles: true,
       canSelectMany: true,
-      title: "选择参考文件",
+      title: "Select Reference Files",
       defaultUri: vscode.Uri.file(workspaceRoot),
     });
     if (uris && uris.length > 0) {
@@ -367,7 +372,7 @@ export function createMessageRouter(
         viewColumn: vscode.ViewColumn.Beside,
       });
     } catch (error: any) {
-      vscode.window.showErrorMessage(`打开配置失败: ${error.message}`);
+      vscode.window.showErrorMessage(`Failed to open config: ${error.message}`);
     }
   }
 
@@ -375,7 +380,17 @@ export function createMessageRouter(
   async function handleReady() {
     console.log("[ready] workspaceRoot:", workspaceRoot);
     console.log("[ready] currentFolders:", currentFolders);
-    await send("init", { workspaceRoot });
+
+    // 加载配置获取 referenceExtensions
+    let referenceExtensions: string[] = ["md", "txt", "rst"]; // 默认
+    try {
+      const config = await loadConfig(workspaceRoot);
+      referenceExtensions = config.referenceExtensions || referenceExtensions;
+    } catch {
+      // 使用默认
+    }
+
+    await send("init", { workspaceRoot, referenceExtensions });
     await send("foldersUpdated", currentFolders);
     await send("refsUpdated", currentRefs);
   }

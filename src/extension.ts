@@ -12,7 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
       console.log("[openPanel] workspaceRoot:", workspaceRoot);
       console.log("[openPanel] all folders:", vscode.workspace.workspaceFolders?.map(f => f.uri.fsPath));
       if (!workspaceRoot) {
-        vscode.window.showErrorMessage("请先打开一个项目文件夹");
+        vscode.window.showErrorMessage("Please open a project folder first");
         return;
       }
       createPanel(context, workspaceRoot);
