@@ -29,13 +29,13 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install          # 改用 install，避免 lock 不同步问题
+        run: npm install
 
       - name: Compile TypeScript
         run: npm run compile
 
       - name: Package extension
-        run: npx vsce package     # 使用 npx 调用本地 vsce
+        run: npx vsce package
 
       - name: Extract version from package.json
         id: version
@@ -56,9 +56,9 @@ jobs:
         run: |
           PREV_TAG=$(git tag --sort=-v:refname | head -n 1 || echo "")
           if [ -n "$PREV_TAG" ]; then
-            NOTES=$(git log --oneline --no-merges "$PREV_TAG"..HEAD)
+            NOTES=$(git log --pretty=format:"- %s %h" --no-merges "$PREV_TAG"..HEAD)
           else
-            NOTES=$(git log --oneline --no-merges)
+            NOTES=$(git log --pretty=format:"- %s %h" --no-merges)
           fi
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$NOTES" >> $GITHUB_OUTPUT
