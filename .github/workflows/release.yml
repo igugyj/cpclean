@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry-run mode (preview only, no actual release)"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+
+      - name: Package extension
+        run: vsce package
+
+      - name: Extract version from package.json
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Check if tag already exists
+        id: tag_exists
+        run: |
+          TAG="v${{ steps.version.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate release notes from git history
+        id: changelog
+        run: |
+          PREV_TAG=$(git tag --sort=-v:refname | head -n 1 || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            NOTES=$(git log --oneline --no-merges "$PREV_TAG"..HEAD)
+          else
+            NOTES=$(git log --oneline --no-merges)
+          fi
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Dry-run preview
+        if: inputs.dry_run == true
+        run: |
+          echo "========== DRY RUN =========="
+          echo "Version: v${{ steps.version.outputs.version }}"
+          echo "Tag exists: ${{ steps.tag_exists.outputs.exists }}"
+          echo ""
+          echo "Changelog preview:"
+          echo "${{ steps.changelog.outputs.notes }}"
+          echo "=============================="
+          echo ""
+          echo "No release was created. Set dry_run to false to publish."
+
+      - name: Create GitHub Release
+        if: inputs.dry_run == false && steps.tag_exists.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          body: |
+            ## Changes in v${{ steps.version.outputs.version }}
+            ${{ steps.changelog.outputs.notes }}
+          files: |
+            *.vsix
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip or warn if tag exists
+        if: inputs.dry_run == false && steps.tag_exists.outputs.exists == 'true'
+        run: |
+          echo "::warning::Tag v${{ steps.version.outputs.version }} already exists. Release skipped."
