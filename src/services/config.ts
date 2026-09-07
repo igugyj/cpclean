@@ -11,8 +11,8 @@ export const DEFAULT_CONFIG: CleanerConfig = {
   excludeFolders: ["node_modules", "dist", ".git", "__pycache__"],
   pairs: {
     "(": ")",
-    '"': '"',
-    "'": "'",
+    '\"': '\"',
+    "\'": "\'",
     "`": "`",
     "[": "]",
     "<": ">",
@@ -54,7 +54,6 @@ export async function generateConfigTemplate(
   const vscodeDir = path.join(workspaceRoot, ".vscode");
   const configPath = path.join(vscodeDir, "cpcleaner.jsonc");
 
-  // 确保 .vscode 目录存在
   await fs.mkdir(vscodeDir, { recursive: true });
 
   const template = `{
@@ -72,12 +71,12 @@ export async function generateConfigTemplate(
     // Paired delimiters for token extraction
     // Default pairs are sufficient for most use cases
     "pairs": {
-        "(": ")",
-        "\"": "\"",
-        "'": "'",
-        "\`": "\`",
-        "[": "]",
-        "<": ">"
+      "(": ")",
+      "\\"": "\\"",
+      "'": "'",
+      "\`": "\`",
+      "[": "]",
+      "<": ">"
     },
 
     // Scan root directory (relative to workspace root)
@@ -89,4 +88,18 @@ export async function generateConfigTemplate(
 }`;
 
   await fs.writeFile(configPath, template, "utf-8");
+}
+
+/**
+ * 确保配置文件存在，不存在则生成模板
+ * 返回配置文件绝对路径
+ */
+export async function ensureConfigFile(workspaceRoot: string): Promise<string> {
+  const configPath = path.join(workspaceRoot, ".vscode", "cpcleaner.jsonc");
+  try {
+    await fs.access(configPath);
+  } catch {
+    await generateConfigTemplate(workspaceRoot);
+  }
+  return configPath;
 }

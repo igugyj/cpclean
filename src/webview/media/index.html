@@ -1,422 +1,16 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CompareCleaner</title>
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/all.min.css">
-    <!-- Vue 3 CDN -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js">
-    </script>
-    <style>
-        /* ===== 全局重置 ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html,
-        body {
-            height: 100%;
-            overflow: hidden;
-        }
-
-        body {
-            font-family: var(--vscode-font-family);
-            font-size: var(--vscode-font-size);
-            color: var(--vscode-foreground);
-            background-color: var(--vscode-editor-background);
-            padding: 20px 24px 20px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            height: 100vh;
-        }
-
-        /* ===== 通用 ===== */
-        .text-muted {
-            color: var(--vscode-descriptionForeground);
-            font-size: 0.9em;
-        }
-
-        .text-sm {
-            font-size: 0.9em;
-        }
-
-        /* ===== 标题栏 ===== */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--vscode-panel-border);
-            flex-shrink: 0;
-        }
-
-        .brand-name {
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .header-actions button,
-        .tag-actions button {
-            background: transparent;
-            border: none;
-            color: var(--vscode-foreground);
-            cursor: pointer;
-            padding: 6px 10px;
-            border-radius: 8px;
-            font-size: 15px;
-            transition: background 0.15s;
-        }
-
-        .header-actions button:hover,
-        .tag-actions button:hover {
-            background: var(--vscode-toolbar-hoverBackground);
-        }
-
-        /* ===== 警示栏（标题下方） ===== */
-        .footer-warning {
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 14px;
-            background: var(--vscode-inputValidation-warningBackground);
-            color: var(--vscode-inputValidation-warningForeground);
-            border: 1px solid var(--vscode-inputValidation-warningBorder);
-            border-radius: 10px;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .footer-warning i {
-            font-size: 15px;
-            opacity: 0.8;
-        }
-
-        /* ===== 状态栏（一行） ===== */
-        .status-bar {
-            flex-shrink: 0;
-            padding: 2px 0;
-        }
-
-        .status-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .workspace {
-            font-size: 14px;
-            color: var(--vscode-descriptionForeground);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex: 1;
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .workspace span {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .status-info {
-            flex-shrink: 0;
-            font-size: 13px;
-            color: var(--vscode-descriptionForeground);
-            text-align: right;
-            min-width: 100px;
-        }
-
-        .status-text {
-            font-weight: 500;
-        }
-
-        .status-text.scanning {
-            color: var(--vscode-progressBar-foreground);
-        }
-
-        .status-text.done {
-            color: var(--vscode-testing-iconPassed, #4caf50);
-        }
-
-        .status-text.idle {
-            color: var(--vscode-descriptionForeground);
-        }
-
-        /* ===== 标签带 ===== */
-        .tag-section {
-            flex-shrink: 0;
-            border: 1px solid var(--vscode-panel-border);
-            border-radius: 10px;
-            padding: 8px 14px;
-            background: var(--vscode-editor-background);
-            max-height: 80px;
-            overflow-y: auto;
-        }
-
-        .tag-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 6px;
-        }
-
-        .tag-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--vscode-descriptionForeground);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .tag-actions {
-            display: flex;
-            gap: 4px;
-        }
-
-        .tag-actions button {
-            font-size: 14px;
-            padding: 4px 8px;
-            border-radius: 8px;
-        }
-
-        .tag-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            align-items: center;
-        }
-
-        .tag-item {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--vscode-badge-background);
-            color: var(--vscode-badge-foreground);
-            padding: 3px 10px 3px 8px;
-            border-radius: 6px;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-
-        .tag-remove {
-            cursor: pointer;
-            opacity: 0.5;
-            background: none;
-            border: none;
-            color: inherit;
-            padding: 0 4px;
-            font-size: 13px;
-            border-radius: 4px;
-            transition: opacity 0.15s;
-        }
-
-        .tag-remove:hover {
-            opacity: 1;
-            background: var(--vscode-toolbar-hoverBackground);
-        }
-
-        /* ===== 结果表格 ===== */
-        .result-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-            border: 1px solid var(--vscode-panel-border);
-            border-radius: 10px;
-            overflow: hidden;
-            background: var(--vscode-editor-background);
-        }
-
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 16px;
-            background: var(--vscode-editor-background);
-            border-bottom: 1px solid var(--vscode-panel-border);
-            flex-shrink: 0;
-            flex-wrap: nowrap;
-            gap: 10px;
-        }
-
-        .result-title {
-            font-size: 14px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .result-title .count {
-            font-weight: 400;
-            font-size: 13px;
-            color: var(--vscode-descriptionForeground);
-        }
-
-        .result-actions {
-            display: flex;
-            gap: 6px;
-            flex-wrap: nowrap;
-            flex-shrink: 0;
-        }
-
-        .result-actions button {
-            background: transparent;
-            border: none;
-            color: var(--vscode-foreground);
-            cursor: pointer;
-            padding: 4px 14px;
-            border-radius: 8px;
-            font-size: 13px;
-            white-space: nowrap;
-            transition: background 0.15s;
-            font-weight: 500;
-        }
-
-        .result-actions button:hover {
-            background: var(--vscode-toolbar-hoverBackground);
-        }
-
-        .result-actions .primary {
-            color: var(--vscode-testing-iconPassed, #4caf50);
-        }
-
-        .result-actions .danger {
-            color: var(--vscode-testing-iconFailed, #f44336);
-        }
-
-        .table-wrapper {
-            flex: 1;
-            overflow: auto;
-            padding: 6px 16px 12px 16px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-
-        th {
-            position: sticky;
-            top: 0;
-            text-align: left;
-            padding: 8px 10px;
-            background: var(--vscode-editor-background);
-            border-bottom: 1px solid var(--vscode-panel-border);
-            font-weight: 600;
-            color: var(--vscode-descriptionForeground);
-            z-index: 2;
-            font-size: 13px;
-        }
-
-        td {
-            padding: 6px 10px;
-            border-bottom: 1px solid var(--vscode-panel-border);
-            line-height: 1.5;
-        }
-
-        tr:hover td {
-            background: var(--vscode-list-hoverBackground);
-        }
-
-        .col-check {
-            width: 30px;
-            text-align: center;
-        }
-
-        .col-name {
-            min-width: 120px;
-            font-weight: 500;
-        }
-
-        .col-path {
-            min-width: 140px;
-            color: var(--vscode-descriptionForeground);
-            font-size: 0.9em;
-        }
-
-        .col-size {
-            min-width: 70px;
-            text-align: right;
-            font-size: 0.9em;
-        }
-
-        .col-mtime {
-            min-width: 130px;
-            font-size: 0.9em;
-            color: var(--vscode-descriptionForeground);
-        }
-
-        input[type="checkbox"] {
-            accent-color: var(--vscode-checkbox-background);
-            cursor: pointer;
-            width: 14px;
-            height: 14px;
-        }
-
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: var(--vscode-descriptionForeground);
-            gap: 8px;
-            font-size: 15px;
-        }
-
-        .empty-state i {
-            font-size: 36px;
-            opacity: 0.25;
-        }
-
-        /* ===== 滚动条 ===== */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--vscode-scrollbarSlider-background);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--vscode-scrollbarSlider-hoverBackground);
-        }
-    </style>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <link rel="stylesheet" href="{{styleUri}}">
 </head>
-
 <body>
-
     <div id="app">
-        <!-- 1. 标题栏 -->
+        <!-- 标题栏 -->
         <header class="header">
             <span class="brand-name">CompareCleaner</span>
             <div class="header-actions">
@@ -426,13 +20,13 @@
             </div>
         </header>
 
-        <!-- 2. 警示栏 -->
+        <!-- 警示栏 -->
         <div class="footer-warning">
             <i class="fa-solid fa-triangle-exclamation"></i>
             <span>目标文件请选择文本类型文件。清理后的文件将移至回收站，请您在清理之前仔细审核。</span>
         </div>
 
-        <!-- 3. 状态栏（一行） -->
+        <!-- 状态栏 -->
         <div class="status-bar">
             <div class="status-row">
                 <div class="workspace">
@@ -445,45 +39,57 @@
             </div>
         </div>
 
-        <!-- 4. 扫描范围 -->
+        <!-- 扫描范围 -->
         <section class="tag-section">
             <div class="tag-header">
                 <span class="tag-title"><i class="fa-regular fa-folder-open"></i> 扫描范围</span>
                 <div class="tag-actions">
-                    <button @click="addFolder"><i class="fa-regular fa-plus"></i></button>
-                    <button @click="clearFolders"><i class="fa-regular fa-trash-can"></i></button>
+                    <button @click="addFolder" title="添加文件夹"><i class="fa-regular fa-plus"></i></button>
+                    <button @click="clearFolders" title="清空"><i class="fa-regular fa-trash-can"></i></button>
                 </div>
             </div>
             <div class="tag-container">
-                <span v-if="folders.length === 0" class="text-muted text-sm">暂无，请添加</span>
-                <span v-for="(f, idx) in folders" :key="idx" class="tag-item">
+                <template v-if="folders.length > 0">
+                    <div v-for="(f, idx) in folders" :key="idx" class="tag-item">
+                        <i class="fa-regular fa-folder"></i>
+                        <span class="tag-text">{{ f }}</span>
+                        <button class="tag-remove" @click="removeFolder(idx)" title="移除">&times;</button>
+                    </div>
+                </template>
+                <div v-else class="tag-placeholder">
                     <i class="fa-regular fa-folder"></i>
-                    <span class="tag-text">{{ f }}</span>
-                    <button class="tag-remove" @click="removeFolder(idx)"><i class="fa-regular fa-xmark"></i></button>
-                </span>
+                    <span>暂无，请添加扫描目录</span>
+                    <span class="tag-hint">点击 + 添加</span>
+                </div>
             </div>
         </section>
 
-        <!-- 5. 参考来源 -->
+        <!-- 参考来源 -->
         <section class="tag-section">
             <div class="tag-header">
                 <span class="tag-title"><i class="fa-regular fa-file-lines"></i> 参考来源</span>
                 <div class="tag-actions">
-                    <button @click="addFile"><i class="fa-regular fa-plus"></i></button>
-                    <button @click="clearRefs"><i class="fa-regular fa-trash-can"></i></button>
+                    <button @click="addFile" title="添加文件"><i class="fa-regular fa-plus"></i></button>
+                    <button @click="clearRefs" title="清空"><i class="fa-regular fa-trash-can"></i></button>
                 </div>
             </div>
             <div class="tag-container">
-                <span v-if="refs.length === 0" class="text-muted text-sm">暂无，请添加</span>
-                <span v-for="(f, idx) in refs" :key="idx" class="tag-item">
-                    <i class="fa-regular fa-file"></i>
-                    <span class="tag-text">{{ f }}</span>
-                    <button class="tag-remove" @click="removeRef(idx)"><i class="fa-regular fa-xmark"></i></button>
-                </span>
+                <template v-if="refs.length > 0">
+                    <div v-for="(f, idx) in refs" :key="'ref-' + idx" class="tag-item">
+                        <i class="fa-regular fa-file"></i>
+                        <span class="tag-text">{{ f }}</span>
+                        <button class="tag-remove" @click="removeRef(idx)" title="移除">&times;</button>
+                    </div>
+                </template>
+                <div v-else class="tag-placeholder">
+                    <i class="fa-regular fa-file-lines"></i>
+                    <span>自动收集: *.md, *.txt, *.rst</span>
+                    <span class="tag-hint">（默认）</span>
+                </div>
             </div>
         </section>
 
-        <!-- 6. 结果表格 -->
+        <!-- 结果表格 -->
         <section class="result-section">
             <div class="result-header">
                 <div class="result-title">
@@ -526,182 +132,6 @@
         </section>
     </div>
 
-    <script>
-        const { createApp, ref, computed, onMounted } = Vue;
-
-        const app = createApp({
-            setup() {
-                const vscode = acquireVsCodeApi();
-
-                const workspaceRoot = ref('');
-                const folders = ref([]);
-                const refs = ref([]);
-                const unusedFiles = ref([]);
-                const checkedIndices = ref([]);
-                const isScanning = ref(false);
-                const progressPercent = ref(0);
-                const progressText = ref('就绪');
-
-                // 计算状态文本
-                const statusText = computed(() => {
-                    if (isScanning.value) {
-                        return `扫描中... ${Math.round(progressPercent.value)}%`;
-                    }
-                    if (progressPercent.value >= 100 && progressText.value === '完成') {
-                        return '完成';
-                    }
-                    return '就绪';
-                });
-
-                // 计算状态样式类
-                const statusClass = computed(() => {
-                    if (isScanning.value) return 'scanning';
-                    if (progressPercent.value >= 100 && progressText.value === '完成') return 'done';
-                    return 'idle';
-                });
-
-                const allChecked = computed({
-                    get: () => {
-                        if (!unusedFiles.value.length) return false;
-                        return checkedIndices.value.length === unusedFiles.value.length;
-                    },
-                    set: (val) => {
-                        if (val) {
-                            checkedIndices.value = unusedFiles.value.map((_, i) => i);
-                        } else {
-                            checkedIndices.value = [];
-                        }
-                    }
-                });
-
-                function postMessage(type, payload = {}) {
-                    vscode.postMessage({ type, payload });
-                }
-
-                window.addEventListener('message', (event) => {
-                    const msg = event.data;
-                    console.log('[Vue] 收到消息:', msg);
-                    switch (msg.type) {
-                        case 'init':
-                            workspaceRoot.value = msg.payload.workspaceRoot || '';
-                            break;
-                        case 'result':
-                            unusedFiles.value = msg.payload || [];
-                            checkedIndices.value = [];
-                            isScanning.value = false;
-                            progressPercent.value = 100;
-                            progressText.value = '完成';
-                            break;
-                        case 'scanStarted':
-                            isScanning.value = true;
-                            progressPercent.value = 0;
-                            progressText.value = '扫描中';
-                            break;
-                        case 'scanFinished':
-                            isScanning.value = false;
-                            progressPercent.value = 100;
-                            progressText.value = '完成';
-                            break;
-                        case 'error':
-                            isScanning.value = false;
-                            progressText.value = '错误';
-                            break;
-                        case 'foldersUpdated':
-                            folders.value = msg.payload || [];
-                            break;
-                        case 'refsUpdated':
-                            refs.value = msg.payload || [];
-                            break;
-                        default:
-                            console.warn('[Vue] 未知消息:', msg.type);
-                    }
-                });
-
-                function runScan() {
-                    if (isScanning.value) return;
-                    postMessage('runScan');
-                }
-
-                function addFolder() { postMessage('selectFolders'); }
-
-                function addFile() { postMessage('selectRefFiles'); }
-
-                function clearFolders() { postMessage('clearFolders'); }
-
-                function clearRefs() { postMessage('clearRefs'); }
-
-                function removeFolder(idx) { postMessage('removeFolder', { index: idx }); }
-
-                function removeRef(idx) { postMessage('removeRefFile', { index: idx }); }
-
-                function clearList() { postMessage('clearUnused'); }
-
-                function removeSelected() {
-                    const indices = checkedIndices.value;
-                    if (indices.length === 0) return;
-                    postMessage('removeFromUnused', { indices });
-                    checkedIndices.value = [];
-                }
-
-                function deleteSelected() {
-                    const indices = checkedIndices.value;
-                    if (indices.length === 0) {
-                        vscode.postMessage({ type: 'warning', payload: '请先勾选要删除的文件' });
-                        return;
-                    }
-                    postMessage('deleteUnused', { indices });
-                }
-
-                function reset() {
-                    if (confirm('确定要重置所有列表吗？')) {
-                        postMessage('reset');
-                    }
-                }
-
-                function openConfig() { postMessage('openConfig'); }
-
-                function showHelp() { postMessage('showHelp'); }
-
-                function toggleAll(e) {
-                    allChecked.value = e.target.checked;
-                }
-
-                onMounted(() => {
-                    postMessage('ready');
-                });
-
-                return {
-                    workspaceRoot,
-                    folders,
-                    refs,
-                    unusedFiles,
-                    checkedIndices,
-                    isScanning,
-                    progressPercent,
-                    progressText,
-                    statusText,
-                    statusClass,
-                    allChecked,
-                    runScan,
-                    addFolder,
-                    addFile,
-                    clearFolders,
-                    clearRefs,
-                    removeFolder,
-                    removeRef,
-                    clearList,
-                    removeSelected,
-                    deleteSelected,
-                    reset,
-                    openConfig,
-                    showHelp,
-                    toggleAll
-                };
-            }
-        });
-
-        app.mount('#app');
-    </script>
+    <script src="{{scriptUri}}"></script>
 </body>
-
 </html>
