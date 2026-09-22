@@ -376,6 +376,23 @@ export function createMessageRouter(
     }
   }
 
+  async function handleOpenGithub() {
+    const repoUrl: string | undefined = vscode.extensions.getExtension(
+      "igugyj.comparecleaner",
+    )?.packageJSON?.repository?.url;
+
+    if (!repoUrl) {
+      vscode.window.showErrorMessage(
+        "Repository URL not found in package.json",
+      );
+      return;
+    }
+
+    // 兼容 git+https://... 或末尾带 .git
+    const url = repoUrl.replace(/^git\+/, "").replace(/\.git$/, "");
+    vscode.env.openExternal(vscode.Uri.parse(url));
+  }
+
   // ===== 初始化 =====
   async function handleReady() {
     console.log("[ready] workspaceRoot:", workspaceRoot);
@@ -411,5 +428,6 @@ export function createMessageRouter(
     handleClearRefs,
     handleClearCache,
     handleOpenConfig,
+    handleOpenGithub,
   };
 }

@@ -159,6 +159,9 @@ const app = createApp({
     function openConfig() {
       postMessage("openConfig");
     }
+    function openGithub() {
+      postMessage("openGithub");
+    }
     function clearCache() {
       postMessage("clearCache");
     }
@@ -200,6 +203,7 @@ const app = createApp({
       deleteSelected,
       reset,
       openConfig,
+      openGithub,
       toggleAll,
       clearCache,
       openFile,

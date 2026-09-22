@@ -90,6 +90,9 @@ export async function createPanel(
         case "openConfig":
           await router.handleOpenConfig();
           break;
+        case "openGithub":
+          await router.handleOpenGithub();
+          break;
         case "clearCache":
           await router.handleClearCache();
           break;
