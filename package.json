@@ -2,7 +2,7 @@
   "name": "comparecleaner",
   "displayName": "CompareCleaner",
   "description": "Find and clean unused files by comparing with reference files.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "Pfolg26",
   "icon": "resources/icon.png",
   "readme": "README.md",
